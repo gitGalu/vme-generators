@@ -1,0 +1,6 @@
+/node_modules/
+.DS_Store
+
+# BIOS/system files and generated lists, and the built bundles
+/vme_import/
+*_vme_import.zip

@@ -1,0 +1,12 @@
+{
+  "name": "vme-generators",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Generators of VM/E import bundles (software lists from Internet Archive collections)",
+  "scripts": {
+    "build-vme-import": "node build-vme-import.js"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1"
+  }
+}
