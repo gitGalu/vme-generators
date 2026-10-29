@@ -4,6 +4,7 @@
   "private": true,
   "description": "Generators of VM/E import bundles (software lists from Internet Archive collections)",
   "scripts": {
+    "test": "node --test",
     "build-vme-import": "node build-vme-import.js"
   },
   "dependencies": {

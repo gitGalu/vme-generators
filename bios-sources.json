@@ -1,0 +1,191 @@
+{
+  "repositories": {
+    "Abdess/retrobios": "e9ef630b3afde71523b56c902bc79efda3abf4b4",
+    "groenator/retroarch_system": "5f96368f6dbad5851cdb16a5041fefec4bdcd305"
+  },
+  "files": {
+    "A800/ATARIXL.ROM": {
+      "sha256": "a77050b2d81db2d11eaa3dbafd8ec2531b478abcc3bcc4b0d846b634e885edb1",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Atari/400-800/ATARIXL.ROM"
+        ],
+        [
+          "groenator/retroarch_system",
+          "Atari - 400-800/ATARIXL.ROM"
+        ]
+      ]
+    },
+    "A800/ATARIBAS.ROM": {
+      "sha256": "4988cb41121921f997ab17a59dd1909fece9273699eba0c6fbaafae104aa27b0",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Atari/400-800/ATARIBAS.ROM"
+        ],
+        [
+          "groenator/retroarch_system",
+          "Atari - 400-800/ATARIBAS.ROM"
+        ]
+      ]
+    },
+    "A800/ATARIOSA.ROM": {
+      "sha256": "eac2e609e9d1f4bbb37081182604502d9d9bdf4112103fd7ab53b99d46a6c61c",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Atari/400-800/ATARIOSA.ROM"
+        ],
+        [
+          "groenator/retroarch_system",
+          "Atari - 400-800/ATARIOSA.ROM"
+        ]
+      ]
+    },
+    "A800/ATARIOSB.ROM": {
+      "sha256": "bc6012f8ca2f7dde21ae895899b1d2af572ffaa28f819b84911ddb6a0bd8a5c7",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Atari/400-800/ATARIOSB.ROM"
+        ],
+        [
+          "groenator/retroarch_system",
+          "Atari - 400-800/ATARIOSB.ROM"
+        ]
+      ]
+    },
+    "A5200/5200.rom": {
+      "sha256": "06b250f18983d058c0f156ce7ee88ae48b6eaf11e6f10f21dccf6ac7ffb6a6af",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Atari/5200/5200.rom"
+        ],
+        [
+          "groenator/retroarch_system",
+          "Atari - 5200/5200.rom"
+        ]
+      ]
+    },
+    "Amiga/kick34005.A500": {
+      "sha256": "ee05862d8102a08436ac4056da7d549db31625c7d47b24dfb7b3c9a5c113ca53",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Commodore/Amiga/kick34005.A500"
+        ],
+        [
+          "groenator/retroarch_system",
+          "Commodore - Amiga/kick34005.A500"
+        ]
+      ]
+    },
+    "Amiga/kick40063.A600": {
+      "sha256": "8c8a0cf04f91b88eaf0c4f1126041987067e2286a8ee590bdbae447a8000c5ee",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Commodore/Amiga/kick40063.A600"
+        ],
+        [
+          "groenator/retroarch_system",
+          "Commodore - Amiga/kick40063.A600"
+        ]
+      ]
+    },
+    "Amiga/kick40068.A1200": {
+      "sha256": "6d43840d4099a74170ea0f0425b6257c3891ebcaa39c4d1840075a9ab22b5707",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Commodore/Amiga/kick40068.A1200"
+        ],
+        [
+          "groenator/retroarch_system",
+          "Commodore - Amiga/kick40068.A1200"
+        ]
+      ]
+    },
+    "Coleco/colecovision.rom": {
+      "sha256": "990bf1956f10207d8781b619eb74f89b00d921c8d45c95c334c16c8cceca09ad",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Coleco/ColecoVision/BIOS.col"
+        ],
+        [
+          "groenator/retroarch_system",
+          "Coleco - ColecoVision/colecovision.rom"
+        ]
+      ]
+    },
+    "ST/tos.img": {
+      "sha256": "ee16750d11299b3e5cf747e6f3c8f9f923aa8ee52c57cc1632d98241500b55f5",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Atari/ST/tos102uk.img"
+        ]
+      ]
+    },
+    "ST/ste.img": {
+      "sha256": "bcf89ce4e897c848f819b2227987ce754fa37994024d9f39a10ceb3bc91c999d",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Atari/ST/tos206de.img"
+        ]
+      ]
+    },
+    "ST/falcon.img": {
+      "sha256": "9e076c46e60c6b2c44d3b5f2307efa4edb5dc53f4e9257ab5b468dcd030be57a",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Atari/ST/tos404.img"
+        ]
+      ]
+    },
+    "GBA/gba_bios.bin": {
+      "sha256": "fd2547724b505f487e6dcb29ec2ecff3af35a841a77ab2e85fd87350abd36570",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Nintendo/Game Boy Advance/gba_bios.bin"
+        ],
+        [
+          "groenator/retroarch_system",
+          "Nintendo - Game Boy Advance/gba_bios.bin"
+        ]
+      ]
+    },
+    "Intellivision/exec.bin": {
+      "sha256": "1aeb614856beba95463166daf09304b414d5617d3f37d221724b3337fc4b2722",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Mattel/Intellivision/exec.bin"
+        ],
+        [
+          "groenator/retroarch_system",
+          "Mattel - Intellivision/exec.bin"
+        ]
+      ]
+    },
+    "Intellivision/grom.bin": {
+      "sha256": "a80b6841182547d08635ad30a6af71441c4c9eed9391b3dd22feb30d8e50cc85",
+      "sources": [
+        [
+          "Abdess/retrobios",
+          "bios/Mattel/Intellivision/grom.bin"
+        ],
+        [
+          "groenator/retroarch_system",
+          "Mattel - Intellivision/grom.bin"
+        ]
+      ]
+    }
+  }
+}

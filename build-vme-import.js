@@ -12,6 +12,8 @@
 //   --src=DIR   bundle source directory (default: vme_import). Holds the dependency files and
 //               the generated lists, laid out as in the ZIP.
 //   --out=FILE  output ZIP (default: <timestamp>_vme_import.zip)
+//   --deps-from=ZIP  restore missing BIOS/system files from an existing import bundle
+//   --download-deps  download missing BIOS files even with --pack (normally offline)
 //
 // A software list (CORSFILEv1) is { version, name, root, bases, items }, where every item is
 // [displayName, baseIndex, rest] and its URL is root + bases[baseIndex] + rest. archive.org
@@ -19,7 +21,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const { createHash } = require('crypto');
 const JSZip = require('jszip');
+const BIOS_SOURCES = require('./bios-sources.json');
 
 const ARCHIVE = 'https://archive.org';
 
@@ -61,6 +65,8 @@ const PLATFORMS = [
           'kick40063.A600': 'Amiga/kick40063.A600',
           'kick40068.A1200': 'Amiga/kick40068.A1200'
       } },
+    { platform: 'apple2', file: 'Apple2/Apple2.json',
+      source: { id: 'Apple_2_TOSEC_2012_04_23', archive: 'Apple_2_TOSEC_2012_04_23.zip' } },
     { platform: 'c64', file: 'C64/C64.json',
       source: { id: 'Commodore_C64_TOSEC_2012_04_23', archive: 'Commodore_C64_TOSEC_2012_04_23.zip' } },
     { platform: 'c128', file: 'C128/C128.json',
@@ -89,6 +95,8 @@ const PLATFORMS = [
       source: { id: 'MSX_MSX_TOSEC_2012_04_23', archive: 'MSX_MSX_TOSEC_2012_04_23.zip' } },
     { platform: 'lynx', file: 'Lynx/lynx.json',
       source: { id: 'AtariLynx_201808', archive: 'ROMS.zip' } },
+    { platform: 'jaguar', file: 'Jaguar/Jaguar.json',
+      source: { id: 'atarijaguarroms_201909', archive: 'Atari_Jaguar_ROMS.zip' } },
     { platform: 'vic20', file: 'VIC20/vic20.json',
       source: { id: 'Commodore_VIC20_TOSEC_2012_04_23', archive: 'Commodore_VIC20_TOSEC_2012_04_23.zip' } },
     { platform: 'zx80', file: 'ZX80/Sinclair_ZX81_TOSEC_2012_04_23.json',
@@ -119,7 +127,7 @@ const PLATFORMS = [
           { id: '630-windows-3x-games', archive: '630Windows3.0Games.zip', tag: 'WIN' }
       ],
       tagPriority: { WIN: 1 },
-      dependencies: { 'win31.dosz': 'DOS/Windows31.dosz' } },
+      optionalDependencies: { 'win31.dosz': 'DOS/Windows31.dosz' } },
     { platform: 'tic80', file: 'TIC-80/TIC-80.json',
       source: { id: 'tic-80-cartridges-17-07-2025', archive: 'tic80_cartridges 17-07-2025.zip' } },
 ];
@@ -139,6 +147,8 @@ function parseArgs(argv) {
     const args = {
         pack: false,
         only: null,
+        depsFrom: null,
+        downloadDeps: false,
         src: 'vme_import',
         out: `${timestamp()}_vme_import.zip`
     };
@@ -148,22 +158,32 @@ function parseArgs(argv) {
         else if (key === 'only') args.only = new Set(value.split(','));
         else if (key === 'src') args.src = value;
         else if (key === 'out') args.out = value;
+        else if (key === 'deps-from' && value) args.depsFrom = value;
+        else if (key === 'download-deps') args.downloadDeps = true;
         else throw new Error(`Unknown option: ${arg}`);
     }
     return args;
 }
 
-async function fetchText(url) {
+async function fetchWithRetries(url, readResponse) {
     for (let attempt = 1; ; attempt++) {
         try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return await response.text();
+            const response = await fetch(url, { signal: AbortSignal.timeout(30000) });
+            if (!response.ok) {
+                const error = new Error(`HTTP ${response.status}`);
+                error.status = response.status;
+                throw error;
+            }
+            return await readResponse(response);
         } catch (error) {
-            if (attempt >= RETRIES) throw new Error(`${url}: ${error.message}`);
+            if (error.status === 404 || attempt >= RETRIES) throw new Error(`${url}: ${error.message}`);
             await new Promise(resolve => setTimeout(resolve, 3000 * attempt));
         }
     }
+}
+
+async function fetchText(url) {
+    return fetchWithRetries(url, response => response.text());
 }
 
 async function fetchMetadata(id) {
@@ -314,15 +334,84 @@ async function buildList(entry) {
     return list;
 }
 
+async function downloadDependency(file, specification = BIOS_SOURCES.files[file]) {
+    if (!specification) throw new Error(`No download source configured for ${file}`);
+    const errors = [];
+    for (const [repository, sourcePath] of specification.sources) {
+        const revision = BIOS_SOURCES.repositories[repository];
+        const url = `https://raw.githubusercontent.com/${repository}/${revision}/`
+            + sourcePath.split('/').map(encodePathPart).join('/');
+        try {
+            const data = await fetchWithRetries(url, async response => Buffer.from(await response.arrayBuffer()));
+            const hash = createHash('sha256').update(data).digest('hex');
+            if (hash !== specification.sha256) throw new Error(`SHA-256 mismatch for ${file}`);
+            return data;
+        } catch (error) {
+            errors.push(`${repository}: ${error.message}`);
+        }
+    }
+    throw new Error(errors.join('\n    '));
+}
+
+async function prepareDependencies(args) {
+    const required = [...new Set(PLATFORMS.flatMap(entry => Object.values(entry.dependencies || {})))];
+    const files = [...new Set(PLATFORMS.flatMap(entry => Object.values({
+        ...entry.dependencies, ...entry.optionalDependencies
+    })))];
+    if (args.depsFrom) {
+        const zip = await JSZip.loadAsync(fs.readFileSync(args.depsFrom));
+        for (const file of files) {
+            const filePath = path.join(args.src, file);
+            if (fs.existsSync(filePath)) continue;
+            const source = zip.file(file);
+            if (!source) continue;
+            const data = await source.async('nodebuffer');
+            fs.mkdirSync(path.dirname(filePath), { recursive: true });
+            fs.writeFileSync(filePath, data, { flag: 'wx' });
+            console.log(`Restored ${file} from ${args.depsFrom}`);
+        }
+    }
+
+    const errors = [];
+    if (!args.pack || args.downloadDeps) {
+        for (const file of required) {
+            const filePath = path.join(args.src, file);
+            if (fs.existsSync(filePath)) continue;
+            try {
+                console.log(`Downloading BIOS ${file}`);
+                const data = await downloadDependency(file);
+                fs.mkdirSync(path.dirname(filePath), { recursive: true });
+                fs.writeFileSync(filePath, data, { flag: 'wx' });
+            } catch (error) {
+                errors.push(`  ${file}: ${error.message}`);
+            }
+        }
+    }
+
+    const missing = required.filter(file => !fs.existsSync(path.join(args.src, file)));
+    if (missing.length > 0) {
+        throw new Error(`Missing BIOS/system files (${missing.length}):\n`
+            + missing.map(file => `  ${path.join(args.src, file)}`).join('\n')
+            + (errors.length ? `\nDownload errors:\n${errors.join('\n')}` : '')
+            + '\nUse --download-deps to fetch missing BIOS files, supply them in the source directory,'
+            + ' or use --deps-from=EXISTING_vme_import.zip.');
+    }
+}
+
 async function pack(args) {
     const zip = new JSZip();
     const manifest = { platforms: {} };
     for (const entry of PLATFORMS) {
         const platform = { software: entry.file };
-        if (entry.dependencies) platform.dependencies = entry.dependencies;
+        const dependencies = { ...entry.dependencies };
+        for (const [key, file] of Object.entries(entry.optionalDependencies || {})) {
+            if (fs.existsSync(path.join(args.src, file))) dependencies[key] = file;
+            else console.log(`Skipping optional ${file} (not supplied locally)`);
+        }
+        if (Object.keys(dependencies).length) platform.dependencies = dependencies;
         manifest.platforms[entry.platform] = platform;
 
-        for (const file of [entry.file, ...Object.values(entry.dependencies || {})]) {
+        for (const file of [entry.file, ...Object.values(dependencies)]) {
             const filePath = path.join(args.src, file);
             if (!fs.existsSync(filePath)) throw new Error(`Missing ${filePath}`);
             zip.file(file, fs.readFileSync(filePath));
@@ -341,6 +430,10 @@ async function main() {
         const unknown = [...args.only].filter(id => !PLATFORMS.some(entry => entry.platform === id));
         if (unknown.length > 0) throw new Error(`Unknown platform(s): ${unknown.join(', ')}`);
     }
+
+    // Packing always includes every platform, even when only some lists are regenerated.
+    // Check dependencies before spending time fetching any software lists.
+    await prepareDependencies(args);
 
     // A platform that fails (collection removed, network error) keeps its previous list.
     const failed = [];
@@ -368,7 +461,11 @@ async function main() {
     }
 }
 
-main().catch(error => {
-    console.error(error.message || error);
-    process.exit(1);
-});
+if (require.main === module) {
+    main().catch(error => {
+        console.error(error.message || error);
+        process.exit(1);
+    });
+}
+
+module.exports = { PLATFORMS, parseArgs, downloadDependency, prepareDependencies, pack };
